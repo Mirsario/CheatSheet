@@ -34,8 +34,8 @@ namespace CheatSheet.Menus
 
 		//	public int brushSize = 1;
 		//	public int[,] BrushTileType = new int[10, 10];
-		public TileData[,] StampTiles = new TileData[0, 0];
-		public Stack<Tuple<Point, TileData[,]>> UndoHistory = new Stack<Tuple<Point, TileData[,]>>();
+		public Tilemap StampTiles = default;
+		public Stack<Tuple<Point, Tilemap>> UndoHistory = new Stack<Tuple<Point, Tilemap>>();
 		public StampInfo stampInfo;
 
 		internal bool StampToolActive;
@@ -89,27 +89,30 @@ namespace CheatSheet.Menus
 			bStampTiles.onLeftClick += new EventHandler(this.bTogglePaintTiles_onLeftClick);
 			bEyeDropper.onLeftClick += new EventHandler(this.bToggleEyeDropper_onLeftClick);
 			bFlipVertical.onLeftClick += (s, e) => {
-				for (int i = 0; i < StampTiles.GetLength(0); i++) {
-					for (int j = 0; j < StampTiles.GetLength(1) / 2; j++) {
-						Utils.Swap(ref StampTiles[i, j], ref StampTiles[i, StampTiles.GetLength(1) - 1 - j]);
+				using var bufferMap = new Tilemap(1, 1);
+				var bufferTile = bufferMap[0, 0];
+
+				for (int i = 0; i < StampTiles.Width; i++) {
+					for (int j = 0; j < StampTiles.Height / 2; j++) {
+						//TODO: Ideally TML would provide a Swap function.
+						var tileA = StampTiles[i, j];
+						var tileB = StampTiles[i, StampTiles.Height - 1 - j];
+						bufferTile.CopyFrom(tileA);
+						tileA.CopyFrom(tileB);
+						tileB.CopyFrom(bufferTile);
 					}
 				}
-				for (int j = 0; j < StampTiles.GetLength(1); j++) {
-					for (int i = 0; i < StampTiles.GetLength(0); i++) {
-						if (StampTiles[i, j].TileWallWireStateData.Slope != SlopeType.Solid) {
-							StampTiles[i, j] = StampTiles[i, j] with {
-								TileWallWireStateData = StampTiles[i, j].TileWallWireStateData with {
-									Slope = StampTiles[i, j].TileWallWireStateData.Slope switch {
-										SlopeType.Solid => SlopeType.Solid,
-										SlopeType.SlopeDownLeft => SlopeType.SlopeUpLeft,
-										SlopeType.SlopeDownRight => SlopeType.SlopeUpRight,
-										SlopeType.SlopeUpLeft => SlopeType.SlopeDownLeft,
-										SlopeType.SlopeUpRight => SlopeType.SlopeDownRight,
-										_ => throw new NotImplementedException(),
-									}
-								}
-							};
-						}
+				for (int j = 0; j < StampTiles.Height; j++) {
+					for (int i = 0; i < StampTiles.Width; i++) {
+						ref var state = ref StampTiles[i, j].Get<TileWallWireStateData>();
+						state.Slope = state.Slope switch {
+							SlopeType.Solid => SlopeType.Solid,
+							SlopeType.SlopeDownLeft => SlopeType.SlopeUpLeft,
+							SlopeType.SlopeDownRight => SlopeType.SlopeUpRight,
+							SlopeType.SlopeUpLeft => SlopeType.SlopeDownLeft,
+							SlopeType.SlopeUpRight => SlopeType.SlopeDownRight,
+							_ => throw new NotImplementedException(),
+						};
 					}
 				}
 				if (stampInfo != null) {
@@ -119,27 +122,31 @@ namespace CheatSheet.Menus
 			bUndo.onLeftClick += (a, b) => bUndo_onClick(false);
 			bUndo.onRightClick += (a, b) => bUndo_onClick(true);
 			bFlipHorizontal.onLeftClick += (s, e) => {
-				for (int j = 0; j < StampTiles.GetLength(1); j++) {
-					for (int i = 0; i < StampTiles.GetLength(0) / 2; i++) {
-						Utils.Swap(ref StampTiles[i, j], ref StampTiles[StampTiles.GetLength(0) - 1 - i, j]);
+				using var bufferMap = new Tilemap(1, 1);
+				var bufferTile = bufferMap[0, 0];
+
+				for (int i = 0; i < StampTiles.Height; i++) {
+					for (int j = 0; j < StampTiles.Width / 2; j++) {
+						//TODO: Ideally TML would provide a Swap function.
+						var tileA = StampTiles[i, j];
+						var tileB = StampTiles[StampTiles.Width - 1 - i, j];
+						bufferTile.CopyFrom(tileA);
+						tileA.CopyFrom(tileB);
+						tileB.CopyFrom(bufferTile);
 					}
 				}
-				for (int j = 0; j < StampTiles.GetLength(1); j++) {
-					for (int i = 0; i < StampTiles.GetLength(0); i++) {
-						if (StampTiles[i, j].TileWallWireStateData.Slope != SlopeType.Solid) {
-							StampTiles[i, j] = StampTiles[i, j] with {
-								TileWallWireStateData = StampTiles[i, j].TileWallWireStateData with {
-									Slope = StampTiles[i, j].TileWallWireStateData.Slope switch {
-										SlopeType.Solid => SlopeType.Solid,
-										SlopeType.SlopeDownLeft => SlopeType.SlopeDownRight,
-										SlopeType.SlopeDownRight => SlopeType.SlopeDownLeft,
-										SlopeType.SlopeUpLeft => SlopeType.SlopeUpRight,
-										SlopeType.SlopeUpRight => SlopeType.SlopeUpLeft,
-										_ => throw new NotImplementedException(),
-									}
-								}
-							};
-						}
+
+				for (int j = 0; j < StampTiles.Height; j++) {
+					for (int i = 0; i < StampTiles.Width; i++) {
+						ref var state = ref StampTiles[i, j].Get<TileWallWireStateData>();
+						state.Slope = state.Slope switch {
+							SlopeType.Solid => SlopeType.Solid,
+							SlopeType.SlopeDownLeft => SlopeType.SlopeDownRight,
+							SlopeType.SlopeDownRight => SlopeType.SlopeDownLeft,
+							SlopeType.SlopeUpLeft => SlopeType.SlopeUpRight,
+							SlopeType.SlopeUpRight => SlopeType.SlopeUpLeft,
+							_ => throw new NotImplementedException(),
+						};
 					}
 				}
 				if (stampInfo != null) {
@@ -216,18 +223,19 @@ namespace CheatSheet.Menus
 			}
 			else {
 				var HistoryItem = UndoHistory.Pop();
-				UpdateUndoTooltip();
+				using Tilemap UndoTiles = HistoryItem.Item2;
 				Point UndoOrigin = HistoryItem.Item1;
-				TileData[,] UndoTiles = HistoryItem.Item2;
-				int width = UndoTiles.GetLength(0);
-				int height = UndoTiles.GetLength(1);
+				UpdateUndoTooltip();
+
+				int width = UndoTiles.Width;
+				int height = UndoTiles.Height;
 				for (int x = 0; x < width; x++) {
 					for (int y = 0; y < height; y++) {
 						if (WorldGen.InWorld(x + UndoOrigin.X, y + UndoOrigin.Y) && UndoTiles[x, y] != null) {
 							//Tile target = Framing.GetTileSafely(x + UndoOrigin.X, y + UndoOrigin.Y);
 							//target.CopyFrom(UndoTiles[x, y]);
 							//Main.tile[x + UndoOrigin.X, y + UndoOrigin.Y] = UndoTiles[x, y];
-							UndoTiles[x, y].CopyToTile(Main.tile[x + UndoOrigin.X, y + UndoOrigin.Y]);
+							Main.tile[x + UndoOrigin.X, y + UndoOrigin.Y].CopyFrom(UndoTiles[x, y]);
 						}
 					}
 				}
@@ -237,6 +245,14 @@ namespace CheatSheet.Menus
 			}
 		}
 
+		internal void ClearUndoHistory() {
+			foreach (var historyTuple in UndoHistory) {
+				historyTuple.Item2.Dispose();
+			}
+			UndoHistory.Clear();
+
+			UpdateUndoTooltip();
+		}
 		internal void UpdateUndoTooltip() {
 			bUndo.Tooltip = CSText("Undo") + " " + UndoHistory.Count + " " + CSText("Undo2");
 		}
@@ -376,12 +392,12 @@ namespace CheatSheet.Menus
 				DrawSelectedRectangle(upperLeftScreen, lowerRight - upperLeft, 1f, leftMouseDown);
 			}
 			else if (StampToolActive && stampInfo != null) {
-				int width = StampTiles.GetLength(0);
-				int height = StampTiles.GetLength(1);
+				int width = StampTiles.Width;
+				int height = StampTiles.Height;
 				Vector2 vector = Snap.GetSnapPosition(CheatSheet.instance.paintToolsUI.SnapType, width, height, constrainToAxis, constrainedX, constrainedY, false);
 
 				if (!leftMouseDown && !Main.LocalPlayer.mouseInterface) {
-					DrawPreview(Main.spriteBatch, stampInfo.Tiles, vector);
+					DrawPreview(Main.spriteBatch, stampInfo.Tilemap, vector);
 				}
 
 				DrawSelectedRectangle(vector, new Vector2(width, height), leftMouseDown ? 1f : .25f, false);
@@ -425,7 +441,7 @@ namespace CheatSheet.Menus
 		}
 
 		private void bTogglePaintTiles_onLeftClick(object sender, EventArgs e) {
-			if (stampInfo == null || StampTiles.GetLength(0) == 0) {
+			if (stampInfo == null || StampTiles.Width == 0) {
 				Main.NewText(CSText("PriorBrush"));
 			}
 			else {
@@ -517,13 +533,7 @@ namespace CheatSheet.Menus
 
 							//ErrorLogger.Log(string.Format("JustDown2 {0} {1} {2} {3}", minX, minY, maxX, maxY));
 
-							StampTiles = new TileData[maxX - minX, maxY - minY];
-
-							for (int i = 0; i < maxX - minX; i++) {
-								for (int j = 0; j < maxY - minY; j++) {
-									StampTiles[i, j] = new TileData();
-								}
-							}
+							StampTiles = new Tilemap((ushort)(maxX - minX), (ushort)(maxY - minY));
 
 							for (int x = minX; x < maxX; x++) {
 								for (int y = minY; y < maxY; y++) {
@@ -538,12 +548,14 @@ namespace CheatSheet.Menus
 											Framing.WallFrame(x, y, true);
 										}
 
-										Tile target = Framing.GetTileSafely(x, y);
-										StampTiles[x - minX, y - minY] = new TileData(target);
+										Tile srcTile = Framing.GetTileSafely(x, y);
+										var dstTile = StampTiles[x - minX, y - minY];
+
+										dstTile.CopyFrom(srcTile);
 										if (Main.tile[x, y].TileType == TileID.Count)
-											StampTiles[x - minX, y - minY] = new TileData();
+											dstTile.ClearEverything();
 										if (Main.tileContainer[Main.tile[x, y].TileType])
-											StampTiles[x - minX, y - minY] = new TileData();
+											dstTile.ClearEverything();
 									}
 								}
 							}
@@ -565,8 +577,8 @@ namespace CheatSheet.Menus
 					player.cursorItemIconID = ItemID.Paintbrush;
 					//		Main.LocalPlayer.showItemIconText = "Click to paint";
 					if (leftMouseDown && stampInfo != null) {
-						int width = StampTiles.GetLength(0);
-						int height = StampTiles.GetLength(1);
+						int width = StampTiles.Width;
+						int height = StampTiles.Height;
 						//Vector2 brushsize = new Vector2(width, height);
 						//Vector2 evenOffset = Vector2.Zero;
 						//if (width % 2 == 0)
@@ -631,25 +643,23 @@ namespace CheatSheet.Menus
 							lastMouseTileX = point.X;
 							lastMouseTileY = point.Y;
 							//Main.NewText("StartTileX " + startTileX);
-							UndoHistory.Push(Tuple.Create(point, new TileData[width, height]));
+							var undoTilemap = new Tilemap((ushort)width, (ushort)height);
+							UndoHistory.Push(Tuple.Create(point, undoTilemap));
 							UpdateUndoTooltip();
 							for (int x = 0; x < width; x++) {
 								for (int y = 0; y < height; y++) {
 									if (WorldGen.InWorld(x + point.X, y + point.Y) && StampTiles[x, y] != null) {
 										Tile target = Framing.GetTileSafely(x + point.X, y + point.Y);
-										UndoHistory.Peek().Item2[x, y] = new TileData(target);
+										undoTilemap[x, y].CopyFrom(target);
 										int cycledX = ((x + point.X - startTileX) % width + width) % width;
 										int cycledY = ((y + point.Y - startTileY) % height + height) % height;
-										if (TransparentSelectionEnabled) // What about just walls?
-										{
-											if (StampTiles[cycledX, cycledY].TileWallWireStateData.HasTile) {
-												//target.CopyFrom(StampTiles[cycledX, cycledY]);
-												StampTiles[cycledX, cycledY].CopyToTile(target);
+										if (TransparentSelectionEnabled) { // What about just walls?
+											if (StampTiles[cycledX, cycledY].HasTile) {
+												target.CopyFrom(StampTiles[cycledX, cycledY]);
 											}
 										}
 										else {
-											//target.CopyFrom(StampTiles[cycledX, cycledY]);
-											StampTiles[cycledX, cycledY].CopyToTile(target);
+											target.CopyFrom(StampTiles[cycledX, cycledY]);
 										}
 									}
 								}
@@ -687,9 +697,9 @@ namespace CheatSheet.Menus
 		//{
 		//	Dictionary<int, int> itemsNeeded = new Dictionary<int, int>();
 
-		//	for (int i = 0; i < stampTiles.GetLength(0); i++)
+		//	for (int i = 0; i < stampTiles.Width; i++)
 		//	{
-		//		for (int j = 0; j < stampTiles.GetLength(1); j++)
+		//		for (int j = 0; j < stampTiles.Height; j++)
 		//		{
 		//			Tile tile = stampTiles[i, j];
 		//			int style = 0;
@@ -747,19 +757,19 @@ namespace CheatSheet.Menus
 			StampToolActive = preHidePaintTiles;
 		}
 
-		public static void DrawPreview(SpriteBatch sb, TileData[,] BrushTiles, Vector2 position, float scale = 1f) {
+		public static void DrawPreview(SpriteBatch sb, Tilemap BrushTiles, Vector2 position, float scale = 1f) {
 			sb.End();
 			sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullCounterClockwise, null, Main.GameViewMatrix.ZoomMatrix); // Fix tiny lines between tiles in preview and thumbnail
 
 			Color color = Color.White;
 			color.A = 160;
-			int width = BrushTiles.GetLength(0);
-			int height = BrushTiles.GetLength(1);
+			int width = BrushTiles.Width;
+			int height = BrushTiles.Height;
 			for (int y = 0; y < height; y++) {
 				for (int x = 0; x < width; x++) {
-					TileData tile = BrushTiles[x, y];
-					if (tile.WallTypeData.Type > 0) {
-						Main.instance.LoadWall(tile.WallTypeData.Type);
+					var tile = BrushTiles[x, y];
+					if (tile.WallType > 0) {
+						Main.instance.LoadWall(tile.WallType);
 						Texture2D textureWall;
 						//			if (PaintToolsEx.canDrawColorWall(tile) && tile.type < Main.wallAltTexture.GetLength(0) && Main.wallAltTexture[tile.type, tile.wallColor()] != null)
 						//				textureWall = Main.wallAltTexture[tile.type, tile.wallColor()];
@@ -776,28 +786,28 @@ namespace CheatSheet.Menus
 
 						//textureWall = WallDrawing.GetTileDrawTexture(tile, -1, -1); // x/y unused
 
-						int wallFrame = Main.wallFrame[tile.WallTypeData.Type] * 180;
-						Rectangle value = new Rectangle(tile.TileWallWireStateData.WallFrameX, tile.TileWallWireStateData.WallFrameY + wallFrame, 32, 32);
+						int wallFrame = Main.wallFrame[tile.WallType] * 180;
+						Rectangle value = new Rectangle(tile.WallFrameX, tile.WallFrameY + wallFrame, 32, 32);
 						Vector2 pos = position + new Vector2(x * 16 - 8, y * 16 - 8);
 						sb.Draw(textureWall, pos * scale, value, color, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 					}
-					if (tile.LiquidData.Amount > 14) {
+					if (tile.LiquidAmount > 14) {
 						Texture2D textureWater;
-						if (tile.LiquidData.LiquidType == LiquidID.Honey)
+						if (tile.LiquidType == LiquidID.Honey)
 							textureWater = LiquidRenderer.Instance._liquidTextures[11].Value;
-						else if (tile.LiquidData.LiquidType == LiquidID.Lava)
+						else if (tile.LiquidType == LiquidID.Lava)
 							textureWater = LiquidRenderer.Instance._liquidTextures[1].Value;
 						else
 							textureWater = LiquidRenderer.Instance._liquidTextures[0].Value;
-						int waterSize = (tile.LiquidData.Amount + 1) / 16;
+						int waterSize = (tile.LiquidAmount + 1) / 16;
 						Vector2 pos = position + new Vector2(x * 16, y * 16 + (16 - waterSize));
 						sb.Draw(textureWater, pos * scale, new Rectangle(16, 48 + 16 - waterSize, 16, waterSize), color, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 					}
-					if (tile.TileWallWireStateData.HasTile) // Tile
+					if (tile.HasTile) // Tile
 					{
-						Main.instance.LoadTiles(tile.TileTypeData.Type);
-						Texture2D texture = TextureAssets.Tile[tile.TileTypeData.Type].Value;
-						Rectangle? value = new Rectangle(tile.TileWallWireStateData.TileFrameX, tile.TileWallWireStateData.TileFrameY, 16, 16/* tileData.CoordinateWidth, tileData.CoordinateHeights[j - (int)op.ObjectStart.Y]*/);
+						Main.instance.LoadTiles(tile.TileType);
+						Texture2D texture = TextureAssets.Tile[tile.TileType].Value;
+						Rectangle? value = new Rectangle(tile.TileFrameX, tile.TileFrameY, 16, 16/* tileData.CoordinateWidth, tileData.CoordinateHeights[j - (int)op.ObjectStart.Y]*/);
 						Vector2 pos = position + new Vector2(x * 16, y * 16);
 						sb.Draw(texture, pos * scale, value, color, 0f, Vector2.Zero, scale, /*spriteEffects*/SpriteEffects.None, 0f);
 					}
@@ -810,15 +820,15 @@ namespace CheatSheet.Menus
 		// Copied from tmod since original code needs Tile instance
 		static FieldInfo _paintSystemFieldInfo;
 		static TilePaintSystemV2 _paintSystem;
-		private static Texture2D GetTileDrawTexture(TileData tile, int tileX, int tileY) {
+		private static Texture2D GetTileDrawTexture(Tile tile, int tileX, int tileY) {
 			if (_paintSystemFieldInfo == null) {
 				_paintSystemFieldInfo = typeof(WallDrawing).GetField("_paintSystem", BindingFlags.Instance | BindingFlags.NonPublic);
 				_paintSystem = (TilePaintSystemV2)_paintSystemFieldInfo.GetValue(Main.instance.WallsRenderer);
 			}
 
-			Texture2D result = TextureAssets.Wall[tile.WallTypeData.Type].Value;
-			int wall = tile.WallTypeData.Type;
-			Texture2D texture2D = _paintSystem.TryGetWallAndRequestIfNotReady(wall, tile.TileWallWireStateData.WallColor);
+			Texture2D result = TextureAssets.Wall[tile.WallType].Value;
+			int wall = tile.WallType;
+			Texture2D texture2D = _paintSystem.TryGetWallAndRequestIfNotReady(wall, tile.WallColor);
 			if (texture2D != null)
 				result = texture2D;
 

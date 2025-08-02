@@ -19,10 +19,11 @@ namespace CheatSheet
 {
 	internal class StampInfo
 	{
-		internal TileData[,] Tiles;
+		internal Tilemap Tilemap;
+		//internal TileData[,] Tiles;
 		//internal Texture2D[,] Textures;
-		internal int Width; // in Pixels
-		internal int Height;
+		internal int WidthInPixels;
+		internal int HeightInPixels;
 		internal bool bFlipHorizontal;
 		internal bool bFlipVertical;
 	}
@@ -99,8 +100,8 @@ namespace CheatSheet
 			int vote = (int)schematic["vote"];
 			string tiledata = (string)schematic["tiledata"];
 			try {
-				TileData[,] tiles = LoadTilesFromBase64(tiledata);
-				if (tiles.GetLength(0) > 0) {
+				Tilemap tiles = LoadTilesFromBase64(tiledata);
+				if (tiles.Width > 0) {
 					var paintToolsSlot = new PaintToolsSlot(GetStampInfo(tiles));
 					paintToolsSlot.browserID = id;
 					paintToolsSlot.browserName = name;
@@ -171,6 +172,8 @@ namespace CheatSheet
 		}
 
 		internal static void Import(PaintToolsView paintToolsView) {
+			// TODO: This feature is removed for now.
+			/*
 			try {
 				List<PaintToolsSlot> list = new List<PaintToolsSlot>();
 				foreach (var line in File.ReadAllLines(importPath, Encoding.UTF8)) {
@@ -180,16 +183,17 @@ namespace CheatSheet
 				paintToolsView.Add(list.ToArray());
 			}
 			catch { }
+			*/
 		}
 
 		static MethodInfo LoadTilesMethodInfo;
 		static MethodInfo LoadWorldTilesVanillaMethodInfo;
 
-		public static TileData[,] LoadTilesFromBase64(string data) {
+		public static Tilemap LoadTilesFromBase64(string data) {
 			int oldX = Main.maxTilesX;
 			int oldY = Main.maxTilesY;
 			// TODO: This feature is remove for now, this line needs to be restored: Tile[,] oldTiles = Main.tile;
-			TileData[,] loadedTiles = new TileData[0, 0];
+			Tilemap loadedTiles = default;
 			try {
 				TagCompound tagCompound = TagIO.FromStream(new MemoryStream(Convert.FromBase64String(data)));
 				if (LoadTilesMethodInfo == null)
@@ -203,10 +207,10 @@ namespace CheatSheet
 				Point16 dimensions = tagCompound.Get<Point16>("d");
 				Main.maxTilesX = dimensions.X;
 				Main.maxTilesY = dimensions.Y;
-				loadedTiles = new TileData[Main.maxTilesX, Main.maxTilesY];
-				for (int i = 0; i < Main.maxTilesX; i++)
-					for (int j = 0; j < Main.maxTilesY; j++)
-						loadedTiles[i, j] = new TileData();
+				loadedTiles = new Tilemap((ushort)Main.maxTilesX, (ushort)Main.maxTilesY);
+				//for (int i = 0; i < Main.maxTilesX; i++)
+				//	for (int j = 0; j < Main.maxTilesY; j++)
+				//		loadedTiles[i, j] = new TileData();
 				// TODO: This feature is remove for now, this line needs to be restored: Main.tile = loadedTiles;
 
 				using (MemoryStream memoryStream = new MemoryStream(tagCompound.GetByteArray("v"))) {
@@ -258,14 +262,14 @@ namespace CheatSheet
 		static MethodInfo SaveTilesMethodInfo;
 		static MethodInfo SaveWorldTilesVanillaMethodInfo;
 
-		public static string SaveTilesToBase64(TileData[,] tiles) {
+		public static string SaveTilesToBase64(Tilemap tiles) {
 			int oldX = Main.maxTilesX;
 			int oldY = Main.maxTilesY;
 			// TODO: This feature is remove for now, this line needs to be restored: Tile[,] oldTiles = Main.tile;
 			string base64result = "";
 			try {
-				Main.maxTilesX = tiles.GetLength(0);
-				Main.maxTilesY = tiles.GetLength(1);
+				//Main.maxTilesX = tiles.GetLength(0);
+				//Main.maxTilesY = tiles.GetLength(1);
 				// TODO: This feature is remove for now, this line needs to be restored: Main.tile = tiles;
 				if (SaveTilesMethodInfo == null)
 					SaveTilesMethodInfo = typeof(Main).Assembly.GetType("Terraria.ModLoader.IO.TileIO").GetMethod("SaveTiles", BindingFlags.Static | BindingFlags.NonPublic);
@@ -306,7 +310,9 @@ namespace CheatSheet
 				foreach (var slot in paintToolsView.slotList) {
 					path = Path.Combine(exportPath, $"CheatSheet_PaintTools_{index++}.json");
 					list.Add(path);
-					File.WriteAllText(path, JsonConvert.SerializeObject(slot.stampInfo.Tiles), Encoding.UTF8);
+
+					// TODO: This feature is removed for now.
+					//File.WriteAllText(path, JsonConvert.SerializeObject(slot.stampInfo.Tiles), Encoding.UTF8);
 				}
 				if (0 < list.Count)
 					File.WriteAllLines(importPath, list);
@@ -315,23 +321,24 @@ namespace CheatSheet
 			catch { }
 		}
 
-		public static StampInfo GetStampInfo(TileData[,] Tiles) {
+		public static StampInfo GetStampInfo(Tilemap Tiles) {
 			int maxTile = ModUtils.TextureMaxTile;
 
 			StampInfo result = new StampInfo();
-			result.Tiles = Tiles;
+			result.Tilemap = Tiles;
 
-			int maxX = Tiles.GetLength(0);
-			int maxY = Tiles.GetLength(1);
+			int maxX = Tiles.Width;
+			int maxY = Tiles.Height;
 			int texMaxX = (int)Math.Ceiling((double)maxX / (double)maxTile);
 			int texMaxY = (int)Math.Ceiling((double)maxY / (double)maxTile);
 			int restX = maxX % maxTile == 0 ? maxTile : maxX % maxTile;
 			int restY = maxY % maxTile == 0 ? maxTile : maxY % maxTile;
 
 			//result.Textures = new Texture2D[texMaxX, texMaxY];
-			result.Width = maxX * 16;
-			result.Height = maxY * 16;
+			result.WidthInPixels = maxX * 16;
+			result.HeightInPixels = maxY * 16;
 
+			/*
 			for (int x = 0; x < texMaxX; x++) {
 				for (int y = 0; y < texMaxY; y++) {
 					TileData[,] tiles = new TileData[x < texMaxX - 1 ? maxTile : restX, y < texMaxY - 1 ? maxTile : restY];
@@ -343,6 +350,7 @@ namespace CheatSheet
 					//result.Textures[x, y] = TilesToTexture(tiles);
 				}
 			}
+			*/
 
 			return result;
 		}

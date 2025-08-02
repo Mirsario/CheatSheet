@@ -229,7 +229,7 @@ namespace CheatSheet.Menus
 					string steamid64 = (string)steamIDMethodInfo.GetValue(null, null);
 					*/
 					string steamid64 = Steamworks.SteamUser.GetSteamID().ToString();
-					string base64tiles = PaintToolsEx.SaveTilesToBase64(PaintToolsSlot.CurrentSelect.stampInfo.Tiles);
+					string base64tiles = PaintToolsEx.SaveTilesToBase64(PaintToolsSlot.CurrentSelect.stampInfo.Tilemap);
 					if (string.IsNullOrEmpty(base64tiles)) {
 						Main.NewText(CSTextSB("OopsBase64TilesIsBad"));
 					}

@@ -49,7 +49,7 @@ namespace CheatSheet.Menus
 				int index = slotList.IndexOf(PaintToolsSlot.CurrentSelect);
 				slotList.Remove(PaintToolsSlot.CurrentSelect);
 				PaintToolsSlot.CurrentSelect = null;
-				CheatSheet.instance.paintToolsHotbar.StampTiles = new TileData[0, 0];
+				CheatSheet.instance.paintToolsHotbar.StampTiles = default;
 				CheatSheet.instance.paintToolsHotbar.stampInfo = null;
 				CheatSheet.instance.paintToolsUI.infoPanel.Visible = false;
 				CheatSheet.instance.paintToolsUI.submitPanel.Visible = false;
@@ -63,7 +63,7 @@ namespace CheatSheet.Menus
 			slotList.RemoveAll(x => x.browserID > 0);
 			if (!slotList.Contains(PaintToolsSlot.CurrentSelect)) {
 				PaintToolsSlot.CurrentSelect = null;
-				CheatSheet.instance.paintToolsHotbar.StampTiles = new TileData[0, 0];
+				CheatSheet.instance.paintToolsHotbar.StampTiles = default;
 				CheatSheet.instance.paintToolsHotbar.stampInfo = null;
 				CheatSheet.instance.paintToolsUI.infoPanel.Visible = false;
 				CheatSheet.instance.paintToolsUI.submitPanel.Visible = false;

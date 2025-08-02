@@ -18,8 +18,7 @@ namespace CheatSheet
 			if (!Main.dedServ && Main.LocalPlayer.name != "") {
 				try {
 					CheatSheet.instance.hotbar.bCycleExtraAccessorySlots.Tooltip = CSText("ExtraAccessorySlots") + " " + Main.LocalPlayer.GetModPlayer<CheatSheetPlayer>().numberExtraAccessoriesEnabled;
-					CheatSheet.instance.paintToolsHotbar.UndoHistory.Clear();
-					CheatSheet.instance.paintToolsHotbar.UpdateUndoTooltip();
+					CheatSheet.instance.paintToolsHotbar.ClearUndoHistory();
 				}
 				catch (Exception e) {
 					CheatSheetUtilities.ReportException(e);
@@ -33,8 +32,7 @@ namespace CheatSheet
 			if (!Main.dedServ && Main.LocalPlayer.name != "") {
 				try {
 					CheatSheet.instance.hotbar.bCycleExtraAccessorySlots.Tooltip = CSText("ExtraAccessorySlots") + " " + Main.LocalPlayer.GetModPlayer<CheatSheetPlayer>().numberExtraAccessoriesEnabled;
-					CheatSheet.instance.paintToolsHotbar.UndoHistory.Clear();
-					CheatSheet.instance.paintToolsHotbar.UpdateUndoTooltip();
+					CheatSheet.instance.paintToolsHotbar.ClearUndoHistory();
 				}
 				catch (Exception e) {
 					CheatSheetUtilities.ReportException(e);

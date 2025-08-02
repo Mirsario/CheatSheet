@@ -33,8 +33,8 @@ namespace CheatSheet.Menus
 			int desiredWidth = 100;
 			int desiredHeight = 100;
 
-			int actualWidth = stampInfo.Width;
-			int actualHeight = stampInfo.Height;
+			int actualWidth = stampInfo.WidthInPixels;
+			int actualHeight = stampInfo.HeightInPixels;
 
 			float scale = 1;
 			Vector2 offset = new Vector2();
@@ -55,7 +55,7 @@ namespace CheatSheet.Menus
 			Main.instance.GraphicsDevice.Clear(Color.Transparent);
 			Main.spriteBatch.Begin();
 
-			PaintToolsHotbar.DrawPreview(Main.spriteBatch, stampInfo.Tiles, offset, scale);
+			PaintToolsHotbar.DrawPreview(Main.spriteBatch, stampInfo.Tilemap, offset, scale);
 
 			Main.spriteBatch.End();
 			Main.instance.GraphicsDevice.SetRenderTarget(null);
@@ -76,13 +76,13 @@ namespace CheatSheet.Menus
 			}
 			if (CurrentSelect == this) {
 				CurrentSelect = null;
-				CheatSheet.instance.paintToolsHotbar.StampTiles = new TileData[0, 0];
+				CheatSheet.instance.paintToolsHotbar.StampTiles = default;
 				CheatSheet.instance.paintToolsHotbar.stampInfo = null;
 			}
 			else {
 				isSelect = true;
 				CurrentSelect = this;
-				CheatSheet.instance.paintToolsHotbar.StampTiles = stampInfo.Tiles;
+				CheatSheet.instance.paintToolsHotbar.StampTiles = stampInfo.Tilemap;
 				CheatSheet.instance.paintToolsHotbar.stampInfo = stampInfo;
 
 				// Update UI;
